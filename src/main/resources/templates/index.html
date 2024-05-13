@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir archivos de texto</title>
+    <!-- Enlace a Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <div class="row">
+        <!-- Columna para entrenamiento -->
+        <div class="col-md-6">
+            <div class="text-center">
+                <h3>TRAIN</h3>
+                <!-- Textarea para mostrar el contenido del archivo -->
+                <textarea id="contenido1" class="form-control mb-3" rows="6" readonly></textarea>
+                <!-- Botón y entrada para cargar archivo -->
+                <input type="file" id="fileInput1" class="form-control-file mb-3">
+                <button class="btn btn-primary" onclick="cargarArchivo(1)">Cargar Archivo</button>
+                <!-- Línea divisoria -->
+                <hr>
+                <!-- Input para alfa -->
+                <div class="form-group row">
+                    <label for="alfa1" class="col-sm-4 col-form-label">Alfa:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="alfa1" placeholder="Valor de alfa">
+                        <p class="mt-2">Alfa es el coeficiente de aprendizaje.</p>
+                    </div>
+                </div>
+                <!-- Input para beta -->
+                <div class="form-group row">
+                    <label for="beta1" class="col-sm-4 col-form-label">Bias:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="beta1" placeholder="Valor de beta">
+                        <p class="mt-2">Beta es un parámetro importante en el entrenamiento.</p>
+                    </div>
+                </div>
+                <!-- Input para épocas -->
+                <div class="form-group row">
+                    <label for="epocas1" class="col-sm-4 col-form-label">Épocas:</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" id="epocas1" placeholder="Número de épocas">
+                        <p class="mt-2">Épocas es el número de veces que se itera sobre el conjunto de entrenamiento.</p>
+                    </div>
+                </div>
+                <!-- Botón de iniciar entrenamiento -->
+                <button class="btn btn-success" onclick="iniciarProceso(1)">Iniciar Entrenamiento</button>
+                <!-- Textarea para mostrar resultados -->
+                <textarea id="resultados1" class="form-control mt-3" rows="6" readonly></textarea>
+            </div>
+        </div>
+        <!-- Columna para pruebas -->
+        <div class="col-md-6">
+            <div class="text-center">
+                <h3>TEST</h3>
+                <!-- Textarea para mostrar el contenido del archivo -->
+                <textarea id="contenido2" class="form-control mb-3" rows="6" readonly></textarea>
+                <!-- Botón y entrada para cargar archivo -->
+                <input type="file" id="fileInput2" class="form-control-file mb-3">
+                <button class="btn btn-primary" onclick="cargarArchivo(2)">Cargar Archivo</button>
+                <!-- Botón de iniciar prueba -->
+                <button class="btn btn-success mt-3" onclick="iniciarPrueba()">Iniciar Prueba</button>
+                <!-- Textarea para mostrar resultados -->
+                <textarea id="resultados2" class="form-control mt-3" rows="6" readonly></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para cargar archivos y procesos -->
+<script>
+    async function cargarArchivo(columna) {
+        var inputFile = document.getElementById('fileInput' + columna);
+        var file = inputFile.files[0];
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+            var contenidoString = reader.result;
+            var contenidoTextarea = document.getElementById('contenido' + columna);
+            contenidoTextarea.value = contenidoString;
+        }
+
+        reader.readAsText(file);
+    }
+
+    async function iniciarProceso(columna) {
+        var resultadosTextarea = document.getElementById('resultados' + columna);
+
+        var contenidoString = document.getElementById('contenido' + columna).value;
+        var alfa = document.getElementById('alfa' + columna).value;
+        var beta = document.getElementById('beta' + columna).value;
+        var epocas = document.getElementById('epocas' + columna).value;
+        var url = '/api/train'; // URL para iniciar el entrenamiento
+
+        try {
+            var response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    alfa: parseFloat(alfa),
+                    beta: parseInt(beta),
+                    epocas: parseInt(epocas),
+                    data: contenidoString
+                })
+            });
+
+            if (response.ok) {
+                var data = await response.text();
+                resultadosTextarea.value = data;
+            } else {
+                throw new Error('Error al procesar la solicitud');
+            }
+        } catch (error) {
+            resultadosTextarea.value = 'Error: ' + error.message;
+        }
+    }
+
+    async function iniciarPrueba() {
+        var resultadosTextarea = document.getElementById('resultados2');
+
+        var contenidoString = document.getElementById('contenido2').value;
+
+        // Asignar valores iniciales de 0 a alfa, beta y epocas
+        var alfa = 0;
+        var beta = 0;
+        var epocas = 0;
+
+        // Crear el objeto TrainingData
+        var trainingData = {
+            alfa: parseFloat(alfa),
+            beta: parseInt(beta),
+            epocas: parseInt(epocas),
+            data: contenidoString
+        };
+
+        var url = '/api/test'; // URL para iniciar la prueba
+
+        try {
+            var response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(trainingData) // Enviar el objeto como JSON
+            });
+
+            if (response.ok) {
+                var data = await response.text();
+                resultadosTextarea.value = data;
+            } else {
+                throw new Error('Error al procesar la solicitud');
+            }
+        } catch (error) {
+            resultadosTextarea.value = 'Error: ' + error.message;
+        }
+    }
+
+
+</script>
+</body>
+</html>
